@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}Student project showcase{% endblock %}
+{% block body_class %}public-page{% endblock %}
+{% block content %}
+<header class="public-header">
+  <a class="brand" href="{{ url_for('home') }}"><span class="brand-mark">N</span><span class="brand-name">northstar<span> institute</span></span></a>
+  <nav class="public-nav" aria-label="Main navigation">
+    <a href="#showcase">Showcase</a><a href="#about">Our approach</a>
+    <a class="button button-outline button-small" href="{{ url_for('login') }}">Student sign in</a>
+    <a class="button button-primary button-small" href="{{ url_for('admin_login') }}">Staff portal <span aria-hidden="true">↗</span></a>
+  </nav>
+</header>
+<main>
+  <section class="hero">
+    <div class="hero-orb orb-one"></div><div class="hero-orb orb-two"></div>
+    <div class="hero-content">
+      <div class="eyebrow eyebrow-light"><span class="eyebrow-dot"></span>LEARN · BUILD · SHOW THE WORLD</div>
+      <h1>Skills are best<br>seen <em>in action.</em></h1>
+      <p class="hero-copy">A showcase of ideas made real by the next generation of digital creators.</p>
+      <form class="student-search" action="{{ url_for('student_search') }}" method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <span class="search-icon" aria-hidden="true">⌕</span>
+        <label class="sr-only" for="student-query">Search by Student ID or Name</label>
+        <input id="student-query" type="search" name="student_query" placeholder="Search by Student ID or Name" autocomplete="off" minlength="2">
+        <button class="button button-primary search-button" type="submit">Find a student <span aria-hidden="true">→</span></button>
+      </form>
+      <p class="privacy-hint"><span aria-hidden="true">♧</span> Student records are private. Sign-in is required to view academic details.</p>
+    </div>
+    <div class="hero-side">
+      <div class="hero-stats"><span class="stat-number">{{ project_count }}</span><span class="stat-caption">approved projects<br>in this showcase</span></div>
+      <div class="hero-line"></div>
+      <span class="hero-caption">IDEAS INTO IMPACT<br><b>One project at a time.</b></span>
+    </div>
+    <div class="hero-bottom"><span>EST. WITH CURIOSITY</span><span>SCROLL TO EXPLORE ↓</span></div>
+  </section>
+
+  <section class="gallery-section" id="showcase">
+    <div class="section-heading">
+      <div><div class="eyebrow"><span class="eyebrow-dot"></span>MADE BY OUR STUDENTS</div><h2>A little work.<br><em>A lot of possibility.</em></h2></div>
+      <p>Every project starts with a question.<br>Here's what happens next.</p>
+    </div>
+    <form class="gallery-controls" method="get" action="{{ url_for('home') }}">
+      <label class="gallery-search"><span aria-hidden="true">⌕</span><input name="q" value="{{ search }}" placeholder="Find a project..." aria-label="Search projects"></label>
+      <label class="sr-only" for="category-filter">Filter projects by category</label>
+      <select id="category-filter" name="category">
+        <option value="">All disciplines</option>
+        {% for item in categories %}<option value="{{ item.category }}" {% if category == item.category %}selected{% endif %}>{{ item.category }}</option>{% endfor %}
+      </select>
+      <button class="button button-dark button-small" type="submit">Search</button>
+    </form>
+    {% if projects %}
+    <div class="project-grid">
+      {% for project in projects %}
+      <article class="project-card">
+        {% if project.attachment_id %}
+        <a class="project-preview {% if project.mime_type == 'application/pdf' %}pdf-preview{% endif %}" href="{{ url_for('public_file', attachment_id=project.attachment_id) }}" {% if project.mime_type == 'application/pdf' %}target="_blank" rel="noopener"{% else %}data-lightbox{% endif %} aria-label="View {{ project.title }}">
+          {% if project.attachment_id and project.mime_type.startswith('image/') %}
+            <img src="{{ url_for('public_file', attachment_id=project.attachment_id) }}" alt="Preview of {{ project.title }}" loading="lazy">
+            <span class="preview-action" aria-hidden="true">↗</span>
+          {% elif project.attachment_id %}
+            <span class="pdf-sheet"><span class="pdf-symbol">PDF</span><span class="pdf-lines"></span></span>
+            <span class="preview-action" aria-hidden="true">↗</span>
+          {% else %}
+            <span class="empty-icon">▧</span>
+          {% endif %}
+          {% if project.attachment_id %}<span class="file-pill">{{ 'PDF' if project.mime_type == 'application/pdf' else project.mime_type.split('/')[-1]|upper }}{% if project.attachments|length > 1 %} · +{{ project.attachments|length - 1 }}{% endif %}</span>{% endif %}
+        </a>
+        {% else %}<div class="project-preview"><span class="empty-icon">▧</span></div>{% endif %}
+        <div class="project-card-body">
+          <div class="project-meta"><span>{{ project.category or project.course_title }}</span><span>{{ project.submitted_at[:10] }}</span></div>
+          <h3>{{ project.title }}</h3>
+          <p>{{ project.description or 'A student project exploring ideas through practical, hands-on learning.' }}</p>
+          <div class="project-footer"><span class="student-byline">{% if project.anonymous %}Northstar student{% else %}{{ project.full_name }}{% endif %}</span><span class="project-course">{{ project.course_title }}</span></div>
+          {% if project.allow_download and project.attachments %}<div class="public-downloads">{% for attachment in project.attachments %}<a href="{{ url_for('public_file', attachment_id=attachment.id, download=1) }}">Download {{ attachment.original_name }} ↓</a>{% endfor %}</div>{% endif %}
+        </div>
+        {% if page_count > 1 %}<nav class="gallery-pagination" aria-label="Project pages">
+          {% if page > 1 %}<a class="button button-outline button-small" href="{{ url_for('home', page=page-1, q=search, category=category) }}">← Newer</a>{% endif %}
+          <span>Page {{ page }} of {{ page_count }} <small>· {{ filtered_count }} projects</small></span>
+          {% if page < page_count %}<a class="button button-outline button-small" href="{{ url_for('home', page=page+1, q=search, category=category) }}">Older →</a>{% endif %}
+        </nav>{% endif %}
+      </article>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state public-empty"><span class="empty-icon">✳</span><h3>{% if search or category %}No projects match just yet.{% else %}The gallery is getting ready.{% endif %}</h3><p>Try another search or check back soon for new student work.</p>{% if search or category %}<a class="text-link" href="{{ url_for('home') }}">Clear filters →</a>{% endif %}</div>
+    {% endif %}
+  </section>
+  <section class="about-strip" id="about"><div class="about-mark">N.</div><div><div class="eyebrow eyebrow-light">A PLACE TO PRACTICE, A PLACE TO GROW</div><h2>Good work deserves<br>to be <em>shared.</em></h2></div><p>Northstar is a computer training institute built around learning by doing. Our students learn the tools, practice the craft, and make things that matter.</p></section>
+</main>
+<footer class="public-footer"><a class="brand" href="{{ url_for('home') }}"><span class="brand-mark">N</span><span class="brand-name">northstar<span> institute</span></span></a><span>Building confidence through practical skills.</span><a href="{{ url_for('login') }}">Student help & sign in ↗</a></footer>
+<div class="lightbox" data-lightbox-dialog hidden role="dialog" aria-modal="true" aria-label="Project preview"><button class="lightbox-close" type="button" aria-label="Close preview">×</button><img alt="Expanded project preview"></div>
+{% endblock %}

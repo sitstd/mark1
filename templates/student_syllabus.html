@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}My syllabus{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><div class="eyebrow"><span class="eyebrow-dot"></span>LEARNING PATH</div><h1>Syllabus progress</h1><p>Your progress is updated by your course teacher.</p></div>
+  {% if courses %}<div class="course-filter-wrap"><label for="course-filter">Course</label><select id="course-filter" class="course-select" data-course-filter><option value="">Choose a course</option>{% for course in courses %}<option value="{{ course.id }}" {% if selected and selected.id == course.id %}selected{% endif %}>{{ course.title }}</option>{% endfor %}</select></div>{% endif %}
+</div>
+{% if selected %}
+<section class="stats-grid">
+  <article class="stat-card"><div class="stat-card-top">Completion <span class="stat-icon">◒</span></div><div class="stat-value">{{ summary.percent }}%</div><div class="stat-foot">{{ summary.completed }} / {{ summary.total }} topics</div></article>
+  <article class="stat-card"><div class="stat-card-top">Completed <span class="stat-icon">✓</span></div><div class="stat-value">{{ summary.completed }}</div><div class="stat-foot">Topics checked off</div></article>
+  <article class="stat-card"><div class="stat-card-top">In progress <span class="stat-icon">↗</span></div><div class="stat-value">{{ summary.in_progress }}</div><div class="stat-foot">Currently being learned</div></article>
+  <article class="stat-card"><div class="stat-card-top">Remaining <span class="stat-icon">○</span></div><div class="stat-value">{{ summary.pending }}</div><div class="stat-foot">Ready for your next step</div></article>
+</section>
+<section class="card card-pad">
+  <div class="card-title-row"><div><h2>{{ selected.title }}</h2><p>Explore every topic in your course.</p></div><span class="status-chip">{{ summary.percent }}% complete</span></div>
+  <nav class="filter-row" aria-label="Filter syllabus topics">
+    {% for value, label in [('all','All topics'),('completed','Completed'),('in_progress','In progress'),('pending','Pending')] %}
+    <a class="filter-pill {% if status == value %}active{% endif %}" href="{{ url_for('student_syllabus', course=selected.id, status=value) }}">{{ label }}</a>
+    {% endfor %}
+  </nav>
+  {% if topics %}
+  <div class="table-wrap"><table><thead><tr><th>Topic</th><th>Module</th><th>Status</th><th>Completed</th><th>Teacher note</th></tr></thead><tbody>
+  {% for topic in topics %}<tr><td><strong>{{ topic.title }}</strong></td><td>{{ topic.module_title }}</td><td><span class="badge badge-{{ topic.status or 'pending' }}">{{ (topic.status or 'pending')|replace('_',' ') }}</span></td><td>{{ topic.completed_at or '—' }}</td><td>{{ topic.remarks or '—' }}</td></tr>{% endfor %}
+  </tbody></table></div>
+  {% else %}<div class="empty-inline"><strong>No topics in this view</strong>{% if status == 'all' %}Your instructor has not added syllabus topics yet.{% else %}Try another status filter.{% endif %}</div>{% endif %}
+</section>
+{% else %}
+<div class="card empty-state"><span class="empty-icon">▤</span><h3>{% if courses %}Choose a course{% else %}No courses assigned{% endif %}</h3><p>{% if courses %}Select a course above to see your topic progress.{% else %}Your learning path will appear here once you're enrolled.{% endif %}</p></div>
+{% endif %}
+{% endblock %}

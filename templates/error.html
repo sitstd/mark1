@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block title %}{{ code }} · Not available{% endblock %}
+{% block body_class %}error-page{% endblock %}
+{% block content %}
+<main class="card error-card"><div class="error-code">{{ code }}</div><h1>We hit a small roadblock.</h1><p>{{ message }}</p><a class="button button-primary" href="{{ url_for('home') }}">Return to the showcase →</a></main>
+{% endblock %}

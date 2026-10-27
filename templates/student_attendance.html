@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Attendance{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><div class="eyebrow"><span class="eyebrow-dot"></span>SHOWING UP MATTERS</div><h1>Attendance</h1><p>Leave and excused sessions are excluded from the attendance percentage.</p></div>
+  {% if courses %}<div class="course-filter-wrap"><label for="course-filter">Course</label><select id="course-filter" class="course-select" data-course-filter><option value="">Choose a course</option>{% for course in courses %}<option value="{{ course.id }}" {% if selected and selected.id == course.id %}selected{% endif %}>{{ course.title }}</option>{% endfor %}</select></div>{% endif %}
+</div>
+<section class="stats-grid">
+  <article class="stat-card"><div class="stat-card-top">Attendance rate <span class="stat-icon">◷</span></div><div class="stat-value">{{ summary.percent }}%</div><div class="stat-foot">Present / present + absent</div></article>
+  <article class="stat-card"><div class="stat-card-top">Classes attended <span class="stat-icon">✓</span></div><div class="stat-value">{{ summary.attended }}</div><div class="stat-foot">Recorded as present</div></article>
+  <article class="stat-card"><div class="stat-card-top">Classes missed <span class="stat-icon">×</span></div><div class="stat-value">{{ summary.missed }}</div><div class="stat-foot">Recorded as absent</div></article>
+  <article class="stat-card"><div class="stat-card-top">Counted sessions <span class="stat-icon">▦</span></div><div class="stat-value">{{ summary.counted }}</div><div class="stat-foot">Cancelled sessions excluded</div></article>
+</section>
+<section class="card card-pad" style="margin-bottom:17px">
+  <div class="card-title-row"><div><h2>Attendance calendar</h2><p>{{ calendar_month }} · cancelled sessions are not displayed.</p></div><div class="page-head-actions"><a class="button button-outline button-small" href="{{ url_for('student_attendance', course=selected.id if selected else none, month=previous_month) }}">← Prev</a><a class="button button-outline button-small" href="{{ url_for('student_attendance', course=selected.id if selected else none, month=next_month) }}">Next →</a></div></div>
+  <div class="calendar-grid calendar-weekdays" aria-hidden="true">{% for weekday in ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'] %}<div>{{ weekday }}</div>{% endfor %}</div>
+  <div class="calendar-grid">{% for week in calendar_weeks %}{% for day in week %}<div class="calendar-day {% if not day.in_month %}other-month{% endif %}"><span class="calendar-number">{{ day.date.day }}</span>{% for day_status in day.statuses %}<span class="calendar-status calendar-{{ day_status }}">{{ day_status|title }}</span>{% endfor %}</div>{% endfor %}{% endfor %}</div>
+  <div class="attendance-legend" style="margin-top:12px"><span><i class="legend-dot" style="background:#54b18d"></i>Present</span><span><i class="legend-dot" style="background:#e57878"></i>Absent</span><span><i class="legend-dot" style="background:#e7aa55"></i>Leave</span><span><i class="legend-dot" style="background:#9ca6b8"></i>Excused</span></div>
+</section>
+<div class="dashboard-grid">
+  <section class="card card-pad">
+    <div class="card-title-row"><div><h2>Attendance by month</h2><p>Leave and excused absences are not counted.</p></div></div>
+    {% if monthly %}<div class="attendance-calendar">{% for month in monthly %}{% set rate = (month.attended * 100 / month.counted) if month.counted else 0 %}<div class="month-card"><strong>{{ month.month }}</strong><small>{{ month.attended }} / {{ month.counted }} sessions · {{ rate|round|int }}%</small><div class="month-meter"><span style="width:{{ rate }}%"></span></div></div>{% endfor %}</div>{% else %}<div class="empty-inline"><strong>No attendance recorded</strong>Your instructor's class records will show here.</div>{% endif %}
+    <div class="attendance-legend" style="margin-top:17px"><span><i class="legend-dot" style="background:#54b18d"></i>Present</span><span><i class="legend-dot" style="background:#e57878"></i>Absent</span><span><i class="legend-dot" style="background:#e7aa55"></i>Leave</span><span><i class="legend-dot" style="background:#9ca6b8"></i>Excused</span></div>
+  </section>
+  <section class="card card-pad">
+    <div class="card-title-row"><div><h2>Attendance policy</h2><p>How your rate is calculated.</p></div></div>
+    <p class="muted" style="font-size:11px;line-height:1.8">Attendance rate = present sessions ÷ (present + absent sessions). Approved leave and excused absences are excluded. Cancelled classes are excluded from reports.</p>
+    <div class="status-note"><span class="badge badge-completed">Present</span> Counted as attended</div><div class="status-note" style="margin-top:8px"><span class="badge badge-absent">Absent</span> Counted as missed</div><div class="status-note" style="margin-top:8px"><span class="badge badge-leave">Leave</span> Excluded from rate</div>
+  </section>
+</div>
+<section class="card card-pad" style="margin-top:17px">
+  <div class="card-title-row"><div><h2>Session history</h2><p>{% if selected %}{{ selected.title }}{% else %}All enrolled courses{% endif %}</p></div></div>
+  {% if records %}<div class="table-wrap"><table><thead><tr><th>Date</th><th>Class</th><th>Course</th><th>Status</th><th>Remarks</th></tr></thead><tbody>{% for record in records %}<tr><td>{{ record.session_date }}</td><td><strong>{{ record.title }}</strong></td><td>{{ record.course_title }}</td><td>{% if record.cancelled %}<span class="status-chip">Cancelled</span>{% else %}<span class="badge badge-{{ record.status }}">{{ record.status }}</span>{% endif %}</td><td>{{ record.remarks or '—' }}</td></tr>{% endfor %}</tbody></table></div>{% else %}<div class="empty-inline"><strong>No session history yet</strong>Attendance records will appear when classes are scheduled.</div>{% endif %}
+</section>
+{% endblock %}

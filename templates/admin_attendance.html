@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Attendance management{% endblock %}
+{% block content %}
+<div class="page-head"><div><div class="eyebrow"><span class="eyebrow-dot"></span>CLASS RECORDS</div><h1>Attendance</h1><p>Present and absent count toward the rate; leave, excused, and cancelled sessions do not.</p></div></div>
+<div class="split-grid">
+  <section class="card card-pad"><div class="card-title-row"><div><h2>Schedule a class</h2><p>Enrolled students are marked absent by default.</p></div></div>
+    <form method="post" class="form-grid"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="action" value="session">
+      <div class="full-width"><label for="session-course">Course</label><select id="session-course" name="course_id" required>{% for course in courses %}<option value="{{ course.id }}">{{ course.title }}</option>{% endfor %}</select></div>
+      <div><label for="session-title">Class title</label><input id="session-title" name="title" required></div><div><label for="session-date">Date</label><input id="session-date" type="date" name="session_date" required></div>
+      <div class="full-width"><button class="button button-primary" type="submit">Create class session →</button></div>
+    </form>
+  </section>
+  <section class="card card-pad"><div class="card-title-row"><div><h2>Record attendance</h2><p>Choose an enrolled student and save their status.</p></div></div>
+    <form method="post" class="form-grid"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="action" value="attendance">
+      <div class="full-width"><label for="attendance-session">Class session</label><select id="attendance-session" name="session_id" required>{% for item in sessions %}<option value="{{ item.id }}">{{ item.session_date }} · {{ item.course_title }} · {{ item.title }}</option>{% endfor %}</select></div>
+      <div class="full-width"><label for="attendance-student">Student</label><select id="attendance-student" name="student_id" required>{% for enrollment in enrollments %}<option value="{{ enrollment.student_id }}">{{ enrollment.full_name }} · {{ enrollment.student_code }} · course {{ enrollment.course_id }}</option>{% endfor %}</select></div>
+      <div><label for="attendance-status">Status</label><select id="attendance-status" name="status"><option value="present">Present</option><option value="absent">Absent</option><option value="leave">Leave</option><option value="excused">Excused</option></select></div>
+      <div><label for="attendance-remarks">Teacher note (optional)</label><input id="attendance-remarks" name="remarks" maxlength="500"></div>
+      <div class="full-width"><button class="button button-primary" type="submit">Save attendance →</button></div>
+    </form>
+  </section>
+</div>
+<section class="card card-pad" style="margin-top:17px"><div class="card-title-row"><div><h2>Class sessions</h2><p>Cancelled sessions are excluded from all attendance rates.</p></div><div class="attendance-legend"><span><i class="legend-dot" style="background:#54b18d"></i>Present</span><span><i class="legend-dot" style="background:#e57878"></i>Absent</span><span><i class="legend-dot" style="background:#e7aa55"></i>Leave / excused</span></div></div>
+  {% if sessions %}<div class="table-wrap"><table><thead><tr><th>Date</th><th>Class</th><th>Course</th><th>Session status</th><th>Attendance records</th></tr></thead><tbody>{% for item in sessions %}<tr><td>{{ item.session_date }}</td><td><strong>{{ item.title }}</strong></td><td>{{ item.course_title }}</td><td><form method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="action" value="cancel"><input type="hidden" name="session_id" value="{{ item.id }}"><button class="button button-outline button-small" type="submit">{{ 'Reopen session' if item.cancelled else 'Cancel session' }}</button></form></td><td>
+    <form method="post" class="inline-form"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="action" value="attendance"><input type="hidden" name="session_id" value="{{ item.id }}"><div class="span-all"><label>Student</label><select name="student_id" required>{% for enrollment in enrollments if enrollment.course_id == item.course_id %}<option value="{{ enrollment.student_id }}">{{ enrollment.full_name }} · {{ enrollment.student_code }}</option>{% endfor %}</select></div><div><label>Status</label><select name="status"><option value="present">Present</option><option value="absent">Absent</option><option value="leave">Leave</option><option value="excused">Excused</option></select></div><div><label>Remark</label><input name="remarks" maxlength="500"></div><div class="span-all"><button class="button button-outline" type="submit">Save record</button></div></form>
+  </td></tr>{% endfor %}</tbody></table></div>{% else %}<div class="empty-inline"><strong>No classes scheduled</strong>Create a session to start recording attendance.</div>{% endif %}
+</section>
+{% endblock %}

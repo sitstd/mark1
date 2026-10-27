@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Test results{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><div class="eyebrow"><span class="eyebrow-dot"></span>YOUR PERFORMANCE</div><h1>Test results</h1><p>Your scores are private and visible only to you and authorized staff.</p></div>
+  {% if courses %}<div class="course-filter-wrap"><label for="course-filter">Course</label><select id="course-filter" class="course-select" data-course-filter><option value="">Choose a course</option>{% for course in courses %}<option value="{{ course.id }}" {% if selected and selected.id == course.id %}selected{% endif %}>{{ course.title }}</option>{% endfor %}</select></div>{% endif %}
+</div>
+{% if selected %}
+<section class="stats-grid">
+  <article class="stat-card"><div class="stat-card-top">Normalized average <span class="stat-icon">↗</span></div><div class="stat-value">{{ summary.percent }}%</div><div class="stat-foot">Total marks earned / total possible</div></article>
+  <article class="stat-card"><div class="stat-card-top">Tests completed <span class="stat-icon">▤</span></div><div class="stat-value">{{ summary.tests }}</div><div class="stat-foot">{{ selected.title }}</div></article>
+  <article class="stat-card"><div class="stat-card-top">Marks earned <span class="stat-icon">✓</span></div><div class="stat-value">{{ summary.marks|round(1) }}</div><div class="stat-foot">From {{ summary.possible|round(1) }} possible</div></article>
+  <article class="stat-card"><div class="stat-card-top">Course <span class="stat-icon">⌘</span></div><div class="stat-value" style="font-size:17px">{{ selected.title }}</div><div class="stat-foot">{{ selected.category }}</div></article>
+</section>
+<section class="card card-pad" style="margin-bottom:17px"><div class="card-title-row"><div><h2>Score trend</h2><p>Each bar is normalized against that test's maximum mark.</p></div></div>
+  {% if results %}<div class="score-chart" role="img" aria-label="Test score percentages over time">{% for result in results|reverse %}{% set percent = (result.marks * 100 / result.max_marks) if result.max_marks else 0 %}<div class="score-column" title="{{ result.name }}: {{ percent|round(1) }}%"><span class="score-column-value">{{ percent|round|int }}%</span><div class="score-column-track"><div class="score-column-bar" style="height:{{ percent }}%"></div></div><span class="score-column-date">{{ result.test_date[5:] }}</span></div>{% endfor %}</div>{% else %}<div class="empty-inline"><strong>No score trend yet</strong>Your test scores will appear after a result is published.</div>{% endif %}
+</section>
+<section class="card card-pad">
+  <div class="card-title-row"><div><h2>Test history</h2><p>Each percentage is calculated from marks obtained and maximum marks.</p></div></div>
+  {% if results %}
+  <div class="table-wrap"><table><thead><tr><th>Test</th><th>Date</th><th>Marks</th><th>Score</th><th>Outcome</th><th>Teacher feedback</th></tr></thead><tbody>
+  {% for result in results %}{% set percent = (result.marks * 100 / result.max_marks) if result.max_marks else 0 %}
+  <tr><td><strong>{{ result.name }}</strong></td><td>{{ result.test_date }}</td><td>{{ result.marks|round(1) }} / {{ result.max_marks|round(1) }}</td><td><strong>{{ percent|round(1) }}%</strong></td><td>{% if result.passing_marks is not none %}<span class="badge {{ 'badge-completed' if result.marks >= result.passing_marks else 'badge-failed' }}">{{ 'Pass' if result.marks >= result.passing_marks else 'Not passed' }}</span>{% else %}<span class="status-chip">No threshold</span>{% endif %}</td><td>{{ result.feedback or '—' }}</td></tr>
+  {% endfor %}</tbody></table></div>
+  {% else %}<div class="empty-inline"><strong>No results recorded</strong>Your published test marks will appear here.</div>{% endif %}
+</section>
+{% else %}<div class="card empty-state"><span class="empty-icon">↗</span><h3>{% if courses %}Choose a course{% else %}No courses assigned{% endif %}</h3><p>{% if courses %}Select a course above to review its test history.{% else %}Your results will appear here once your course is set up.{% endif %}</p></div>{% endif %}
+{% endblock %}

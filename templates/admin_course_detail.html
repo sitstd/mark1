@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}{{ course.title }} management{% endblock %}
+{% block content %}
+<div class="page-head"><div><div class="eyebrow"><span class="eyebrow-dot"></span>COURSE MANAGEMENT</div><h1>{{ course.title }}</h1><p>{{ course.category }} · {{ course.description or 'Manage this course syllabus and student progress.' }}</p></div><a class="button button-outline button-small" href="{{ url_for('admin_courses') }}">← Course catalog</a></div>
+<section class="card card-pad data-card"><details><summary class="text-link">Edit course details</summary><form method="post" class="form-grid" style="margin-top:12px"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="action" value="course"><div><label for="course-title-edit">Course title</label><input id="course-title-edit" name="course_title" value="{{ course.title }}" required></div><div><label for="course-category-edit">Category</label><input id="course-category-edit" name="course_category" value="{{ course.category }}"></div><div class="full-width"><label for="course-description-edit">Description</label><textarea id="course-description-edit" name="course_description">{{ course.description }}</textarea></div><div class="full-width"><button class="button button-primary button-small" type="submit">Save course details</button></div></form></details></section>
+<div class="split-grid">
+  <section class="card card-pad"><div class="card-title-row"><div><h2>Add a module</h2><p>Modules organize your course into chapters.</p></div></div><form method="post" class="form-grid"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="action" value="module"><div><label for="module-title">Module name</label><input id="module-title" name="title" required></div><div><label for="module-position">Order</label><input id="module-position" type="number" name="position" value="0"></div><div class="full-width"><button class="button button-primary button-small" type="submit">Add module</button></div></form></section>
+  <section class="card card-pad"><div class="card-title-row"><div><h2>Add a topic</h2><p>New topics start pending for every enrolled student.</p></div></div><form method="post" class="form-grid"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="action" value="topic">  <div class="full-width"><label for="module-id">Module</label><select id="module-id" name="module_id" required>{% for module in modules %}<option value="{{ module.id }}">{{ module.title }}</option>{% endfor %}</select></div><div><label for="topic-title">Topic name</label><input id="topic-title" name="title" required></div><div><label for="topic-position">Order</label><input id="topic-position" type="number" name="position" value="0"></div><div class="full-width"><button class="button button-primary button-small" type="submit">Add topic</button></div></form></section>
+</div>
+<section class="card card-pad" style="margin-top:17px"><div class="card-title-row"><div><h2>Syllabus & student progress</h2><p>Only administrators and assigned course teachers can update statuses.</p></div><span class="status-chip">{{ students|length }} enrolled</span></div>
+  {% if modules %}
+  {% for module in modules %}
+  <div class="module-block"><div class="module-heading">{{ module.title }}</div>
+    {% for topic in module.topics %}
+    <div class="topic-row"><strong>{{ topic.title }}</strong><div>
+      {% if topic.progress %}
+        {% for item in topic.progress %}
+        <form method="post" action="{{ url_for('update_topic_progress', student_id=item.student.id, topic_id=topic.id) }}" style="display:flex;align-items:center;gap:6px;margin:4px 0">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <span class="table-subtext" style="min-width:110px">{{ item.student.full_name }} · {{ item.student.student_code }}</span>
+          <select name="status" aria-label="Progress status for {{ item.student.full_name }}"><option value="pending" {% if item.status == 'pending' %}selected{% endif %}>Pending</option><option value="in_progress" {% if item.status == 'in_progress' %}selected{% endif %}>In progress</option><option value="completed" {% if item.status == 'completed' %}selected{% endif %}>Completed</option></select>
+          <input name="remarks" aria-label="Teacher remark for {{ item.student.full_name }}" placeholder="Teacher note" value="{{ item.remarks }}">
+          <button class="button button-outline" type="submit">Save</button>
+        </form>
+        {% endfor %}
+      {% else %}<span class="table-subtext">Enroll students to assign this topic.</span>{% endif %}
+    </div></div>{% else %}<div class="empty-inline">No topics in this module yet.</div>{% endfor %}
+  </div>
+  {% endfor %}
+  {% else %}<div class="empty-inline"><strong>No syllabus structure yet</strong>Add a module, then add topics to it.</div>{% endif %}
+</section>
+<section class="card card-pad" style="margin-top:17px"><div class="card-title-row"><div><h2>Course enrollment</h2><p>Enrolled learners receive all current syllabus topics.</p></div></div>
+  {% if current_user.role == 'admin' %}<form method="post" action="{{ url_for('enroll_student', course_id=course.id) }}" class="inline-form" style="max-width:420px"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><div class="span-all"><label for="enroll-student">Student</label><select id="enroll-student" name="student_id" required>{% for student in all_students %}<option value="{{ student.id }}">{{ student.full_name }} · {{ student.student_code }}</option>{% endfor %}</select></div><button class="button button-primary" type="submit">Enroll student →</button></form>{% endif %}
+  {% if students %}<div class="table-wrap" style="margin-top:15px"><table><thead><tr><th>Student</th><th>Student ID</th><th>Enrollment</th>{% if current_user.role == 'admin' %}<th>Update status</th>{% endif %}</tr></thead><tbody>{% for student in students %}<tr><td><strong>{{ student.full_name }}</strong></td><td>{{ student.student_code }}</td><td><span class="badge badge-{{ student.status }}">{{ student.status }}</span></td>{% if current_user.role == 'admin' %}<td><form method="post" action="{{ url_for('update_enrollment', course_id=course.id, student_id=student.id) }}" class="inline-form"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><select name="status"><option value="active" {% if student.status == 'active' %}selected{% endif %}>Active</option><option value="completed" {% if student.status == 'completed' %}selected{% endif %}>Completed</option><option value="paused" {% if student.status == 'paused' %}selected{% endif %}>Paused</option></select><button class="button button-outline" type="submit">Save</button></form></td>{% endif %}</tr>{% endfor %}</tbody></table></div>{% else %}<div class="empty-inline"><strong>No students enrolled</strong>Enroll a student above to assign the course syllabus.</div>{% endif %}
+</section>
+{% endblock %}

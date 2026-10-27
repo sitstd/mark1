@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}My projects{% endblock %}
+{% block content %}
+<div class="page-head"><div><div class="eyebrow"><span class="eyebrow-dot"></span>YOUR CREATIVE WORK</div><h1>My projects</h1><p>Your private project library. Only approved projects appear in the public showcase.</p></div><span class="status-chip">{{ projects|length }} project{{ '' if projects|length == 1 else 's' }}</span></div>
+<section class="card card-pad data-card"><div class="card-title-row"><div><h2>Submit a project</h2><p>Your files stay private unless institute staff approve public showcase publication.</p></div></div>
+  {% if courses %}
+  <form method="post" enctype="multipart/form-data" class="form-grid"><input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <div><label for="student-project-course">Course</label><select id="student-project-course" name="course_id" required>{% for course in courses %}<option value="{{ course.id }}">{{ course.title }}</option>{% endfor %}</select></div>
+    <div><label for="student-project-title">Project title</label><input id="student-project-title" name="title" required></div>
+    <div><label for="student-project-category">Category</label><input id="student-project-category" name="category" maxlength="100"></div>
+    <div><label for="student-project-files">Attachments · JPG, JPEG, PNG, PDF · max 10 MB each</label><input id="student-project-files" type="file" name="files" accept=".jpg,.jpeg,.png,.pdf" multiple></div>
+    <div class="full-width"><label for="student-project-description">Description</label><textarea id="student-project-description" name="description" maxlength="2000"></textarea></div>
+    <div class="full-width"><button class="button button-primary" type="submit">Submit for review →</button></div>
+  </form>
+  {% else %}<div class="empty-inline"><strong>No enrolled course</strong>Ask institute staff to enroll you before submitting course work.</div>{% endif %}
+</section>
+{% if projects %}
+<div class="project-grid">
+  {% for project in projects %}
+  <article class="project-card">
+    {% if project.attachments %}
+    {% set preview = project.attachments[0] %}
+    <a class="project-preview {% if preview.mime_type == 'application/pdf' %}pdf-preview{% endif %}" href="{{ url_for('private_file', attachment_id=preview.id) }}" {% if preview.mime_type == 'application/pdf' %}target="_blank" rel="noopener"{% endif %}>
+      {% if preview.mime_type.startswith('image/') %}<img src="{{ url_for('private_file', attachment_id=preview.id) }}" alt="Project preview" loading="lazy">{% else %}<span class="pdf-sheet"><span class="pdf-symbol">PDF</span><span class="pdf-lines"></span></span>{% endif %}
+      <span class="file-pill">{{ preview.mime_type.split('/')[-1]|upper }} · {{ project.attachments|length }} FILE{{ '' if project.attachments|length == 1 else 'S' }}</span>
+    </a>
+    {% else %}<div class="project-preview"><span class="empty-icon">▧</span></div>{% endif %}
+    <div class="project-card-body"><div class="project-meta"><span>{{ project.category or project.course_title }}</span><span>{{ project.submitted_at[:10] }}</span></div><h3>{{ project.title }}</h3><p>{{ project.description or 'No description provided.' }}</p><div class="project-footer"><span class="badge {{ 'badge-published' if project.id else 'badge-pending' }}">Private library</span><span>{{ project.course_title }}</span></div>
+      {% if project.feedback %}<p style="margin:12px 0 0;padding-top:10px;border-top:1px solid #f0f1f5"><strong>Teacher feedback</strong><br>{{ project.feedback }}</p>{% endif %}
+      {% for attachment in project.attachments %}<a class="text-link" href="{{ url_for('private_file', attachment_id=attachment.id, download=1) }}">Download {{ attachment.original_name }} →</a><span class="table-subtext">{{ (attachment.file_size / 1024)|round|int }} KB</span>{% endfor %}
+    </div>
+  </article>
+  {% endfor %}
+</div>
+{% else %}<div class="card empty-state"><span class="empty-icon">▧</span><h3>Your project library is ready</h3><p>When your work is added to the student portal, you'll find it here.</p></div>{% endif %}
+{% endblock %}

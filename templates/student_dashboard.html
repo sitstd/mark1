@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}My learning dashboard{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><div class="eyebrow"><span class="eyebrow-dot"></span>YOUR LEARNING SPACE</div><h1>Welcome, {{ student.full_name.split(' ')[0] }}.</h1><p>Here’s how your learning journey is coming along.</p></div>
+  <span class="status-chip">Student ID · {{ student.student_code }}</span>
+</div>
+<section class="stats-grid" aria-label="Academic summary">
+  <article class="stat-card"><div class="stat-card-top">Enrolled courses <span class="stat-icon">▤</span></div><div class="stat-value">{{ stats.courses }}</div><div class="stat-foot">Active learning paths</div></article>
+  <article class="stat-card"><div class="stat-card-top">Syllabus complete <span class="stat-icon">◒</span></div><div class="stat-value">{{ stats.syllabus.percent }}%</div><div class="stat-foot">{{ stats.syllabus.completed }} of {{ stats.syllabus.total }} topics completed</div></article>
+  <article class="stat-card"><div class="stat-card-top">Completed topics <span class="stat-icon">✓</span></div><div class="stat-value">{{ stats.syllabus.completed }}</div><div class="stat-foot">Across active courses</div></article>
+  <article class="stat-card"><div class="stat-card-top">Pending topics <span class="stat-icon">○</span></div><div class="stat-value">{{ stats.syllabus.pending }}</div><div class="stat-foot">{{ stats.syllabus.in_progress }} currently in progress</div></article>
+  <article class="stat-card"><div class="stat-card-top">Tests completed <span class="stat-icon">▧</span></div><div class="stat-value">{{ stats.results.tests }}</div><div class="stat-foot">Published test results</div></article>
+  <article class="stat-card"><div class="stat-card-top">Average test score <span class="stat-icon">↗</span></div><div class="stat-value">{{ stats.results.percent }}%</div><div class="stat-foot">{{ stats.results.tests }} tests · normalized by total marks</div></article>
+  <article class="stat-card"><div class="stat-card-top">Attendance <span class="stat-icon">◷</span></div><div class="stat-value">{{ stats.attendance.percent }}%</div><div class="stat-foot">{{ stats.attendance.attended }} of {{ stats.attendance.counted }} counted sessions</div></article>
+  <article class="stat-card"><div class="stat-card-top">Projects submitted <span class="stat-icon">▣</span></div><div class="stat-value">{{ stats.projects }}</div><div class="stat-foot">In your private project library</div></article>
+</section>
+<div class="dashboard-grid">
+  <section class="card card-pad">
+    <div class="card-title-row"><div><h2>Your courses</h2><p>Progress updates as your teacher marks topics complete.</p></div><a class="text-link" href="{{ url_for('student_syllabus') }}">View syllabus →</a></div>
+    {% if courses %}
+    <div class="course-list">
+      {% for course, course_summary in course_summaries %}
+      <a class="course-row" href="{{ url_for('student_course', course_id=course.id) }}">
+        <span class="course-icon">⌘</span>
+        <span class="course-row-main"><strong>{{ course.title }}</strong><small>{{ course.category }} · {{ course.enrollment_status|title }}</small></span>
+        <span class="course-row-progress">
+          <span class="progress-track"><span class="progress-fill" style="width: {{ course_summary.percent }}%"></span></span>
+          <small>{{ course_summary.percent }}% · {{ course_summary.completed }}/{{ course_summary.total }}</small>
+        </span>
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-inline"><strong>No courses yet</strong>Your institute will add your course enrollment here.</div>
+    {% endif %}
+    <div class="mini-progress"><div><span>Overall syllabus progress</span><strong>{{ stats.syllabus.percent }}%</strong></div><div class="progress-track"><div class="progress-fill" style="width: {{ stats.syllabus.percent }}%"></div></div></div>
+  </section>
+  <section class="card card-pad">
+    <div class="card-title-row"><div><h2>Recent results</h2><p>Your latest published test scores.</p></div><a class="text-link" href="{{ url_for('student_results') }}">All results →</a></div>
+    {% if recent_results %}
+    <div class="score-list">
+      {% for result in recent_results %}
+      <div class="score-item"><span><strong>{{ result.name }}</strong><small>{{ result.course_title }} · {{ result.test_date }}</small></span><span class="score-value">{{ result.marks|round(1) }}/{{ result.max_marks|round(1) }}</span></div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-inline"><strong>No results yet</strong>Published test results will appear here.</div>
+    {% endif %}
+  </section>
+</div>
+<div class="admin-shortcuts">
+  <a class="shortcut" href="{{ url_for('student_syllabus') }}"><span>▤</span>{{ stats.syllabus.pending }} topics still to explore <b>→</b></a>
+  <a class="shortcut" href="{{ url_for('student_projects') }}"><span>▧</span>{{ stats.projects }} projects in your library <b>→</b></a>
+  <a class="shortcut" href="{{ url_for('student_attendance') }}"><span>◷</span>View attendance history <b>→</b></a>
+</div>
+{% if announcements %}
+<section class="card card-pad" style="margin-top:17px">
+  <div class="card-title-row"><div><h2>Project feedback</h2><p>Notes from your teacher.</p></div></div>
+  <div class="score-list">{% for item in announcements %}<div class="score-item"><span><strong>{{ item.title }}</strong><small>{{ item.submitted_at[:10] }}</small></span><span>{{ item.feedback }}</span></div>{% endfor %}</div>
+</section>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Institute overview{% endblock %}
+{% block content %}
+<div class="page-head"><div><div class="eyebrow"><span class="eyebrow-dot"></span>INSTITUTE MANAGEMENT</div><h1>Good to see you, {{ current_user.username }}.</h1><p>Here’s the latest snapshot of your learning community.</p></div><span class="status-chip">{{ current_user.role|title }} workspace</span></div>
+<section class="stats-grid">
+  <article class="stat-card"><div class="stat-card-top">Active students <span class="stat-icon">♙</span></div><div class="stat-value">{{ metrics.students }}</div><div class="stat-foot">Across your assigned courses</div></article>
+  <article class="stat-card"><div class="stat-card-top">Active courses <span class="stat-icon">▤</span></div><div class="stat-value">{{ metrics.courses }}</div><div class="stat-foot">Courses in the portal</div></article>
+  <article class="stat-card"><div class="stat-card-top">Student projects <span class="stat-icon">▧</span></div><div class="stat-value">{{ metrics.projects }}</div><div class="stat-foot">Private and published work</div></article>
+  <article class="stat-card"><div class="stat-card-top">Public showcase <span class="stat-icon">↗</span></div><div class="stat-value">{{ metrics.published }}</div><div class="stat-foot">Approved projects</div></article>
+</section>
+<div class="dashboard-grid">
+  <section class="card card-pad"><div class="card-title-row"><div><h2>Your courses</h2><p>Manage syllabi, students, and learning records.</p></div>{% if current_user.role == 'admin' %}<a class="text-link" href="{{ url_for('admin_courses') }}">All courses →</a>{% endif %}</div>
+  {% if courses %}<div class="course-list">{% for course in courses %}<a class="course-row" href="{{ url_for('admin_course_detail', course_id=course.id) }}"><span class="course-icon">⌘</span><span class="course-row-main"><strong>{{ course.title }}</strong><small>{{ course.category }}</small></span><span class="text-link">Manage →</span></a>{% endfor %}</div>{% else %}<div class="empty-inline"><strong>No courses assigned</strong>Create a course or ask an administrator to assign one.</div>{% endif %}
+  <div class="admin-shortcuts">
+    {% if current_user.role == 'admin' %}<a class="shortcut" href="{{ url_for('admin_students') }}"><span>♙</span>Add a student <b>→</b></a><a class="shortcut" href="{{ url_for('admin_courses') }}"><span>▤</span>Create a course <b>→</b></a>{% endif %}
+    <a class="shortcut" href="{{ url_for('admin_results') }}"><span>↗</span>Enter test marks <b>→</b></a><a class="shortcut" href="{{ url_for('admin_attendance') }}"><span>◷</span>Manage attendance <b>→</b></a><a class="shortcut" href="{{ url_for('admin_projects') }}"><span>▧</span>Review projects <b>→</b></a>
+  </div></section>
+  <section class="card card-pad"><div class="card-title-row"><div><h2>Recent activity</h2><p>Latest changes by authorized staff.</p></div></div>
+    {% if recent %}<div class="score-list">{% for event in recent %}<div class="score-item"><span><strong>{{ event.action|title }} {{ event.entity_type|replace('_',' ') }}</strong><small>{{ event.username or 'Former user' }} · {{ event.created_at[:16] }}</small></span><span class="score-value" style="font-size:10px">{{ event.details or '—' }}</span></div>{% endfor %}</div>{% elif current_user.role == 'admin' %}<div class="empty-inline"><strong>No activity recorded yet</strong>Administrative changes will be logged here.</div>{% else %}<div class="empty-inline"><strong>Admin-only activity feed</strong>You can manage activity within your assigned courses.</div>{% endif %}
+  </section>
+</div>
+<div class="dashboard-grid" style="margin-top:17px">
+  <section class="card card-pad"><div class="card-title-row"><div><h2>Recent test results</h2><p>Latest recorded marks {% if current_user.role == 'teacher' %}for your assigned courses{% endif %}.</p></div><a class="text-link" href="{{ url_for('admin_results') }}">Manage results →</a></div>
+    {% if recent_tests %}<div class="score-list">{% for result in recent_tests %}<div class="score-item"><span><strong>{{ result.full_name }} · {{ result.test_name }}</strong><small>{{ result.student_code }} · {{ result.course_title }} · {{ result.test_date }}</small></span><span class="score-value">{{ result.marks|round(1) }}/{{ result.max_marks|round(1) }}</span></div>{% endfor %}</div>{% else %}<div class="empty-inline"><strong>No results recorded</strong>Test results will appear here.</div>{% endif %}
+  </section>
+  <section class="card card-pad"><div class="card-title-row"><div><h2>Attendance overview</h2><p>Present ÷ present + absent, excluding leave and cancelled sessions.</p></div><a class="text-link" href="{{ url_for('admin_attendance') }}">Manage attendance →</a></div>
+    <div class="mini-progress"><div><span>Attendance rate</span><strong>{{ overall_attendance.percent }}%</strong></div><div class="progress-track"><div class="progress-fill" style="width:{{ overall_attendance.percent }}%"></div></div><p class="muted" style="margin:8px 0 0;font-size:9px">{{ overall_attendance.attended }} present / {{ overall_attendance.counted }} counted sessions</p></div>
+    <div class="card-title-row" style="margin-top:17px"><div><h3>Needs attention</h3><p>Below {{ attention_threshold }}% with enough recorded sessions.</p></div></div>
+    {% if attention_students %}<div class="score-list">{% for student in attention_students %}{% set rate = (student.attended * 100 / student.counted) if student.counted else 0 %}<div class="score-item"><span><strong>{{ student.full_name }}</strong><small>{{ student.student_code }} · {{ student.attended }}/{{ student.counted }} sessions</small></span><span class="badge badge-pending">{{ rate|round(1) }}%</span></div>{% endfor %}</div>{% else %}<div class="empty-inline"><strong>No students flagged</strong>No learner currently meets the configured attention rule.</div>{% endif %}
+  </section>
+</div>
+{% endblock %}

@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Tests & marks{% endblock %}
+{% block content %}
+<div class="page-head"><div><div class="eyebrow"><span class="eyebrow-dot"></span>ASSESSMENT MANAGEMENT</div><h1>Tests & marks</h1><p>Scores are validated against each test's maximum and changes are audit logged.</p></div></div>
+<div class="split-grid">
+  <section class="card card-pad"><div class="card-title-row"><div><h2>Create a test</h2><p>Set the maximum score and optional passing threshold.</p></div></div>
+    <form method="post" class="form-grid"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="action" value="test">
+      <div class="full-width"><label for="test-course">Course</label><select id="test-course" name="course_id" required>{% for course in courses %}<option value="{{ course.id }}">{{ course.title }}</option>{% endfor %}</select></div>
+      <div class="full-width"><label for="test-name">Test name</label><input id="test-name" name="name" required></div>
+      <div><label for="test-date">Date</label><input id="test-date" type="date" name="test_date"></div>
+      <div><label for="max-marks">Maximum marks</label><input id="max-marks" type="number" name="max_marks" min="0.01" step="0.01" required></div>
+      <div><label for="passing-marks">Passing marks (optional)</label><input id="passing-marks" type="number" name="passing_marks" min="0" step="0.01"></div>
+      <div class="full-width"><button class="button button-primary" type="submit">Create test →</button></div>
+    </form>
+  </section>
+  <section class="card card-pad"><div class="card-title-row"><div><h2>Record a result</h2><p>Students must be enrolled in the test's course.</p></div></div>
+    <form method="post" class="form-grid"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="action" value="result">
+      <div class="full-width"><label for="result-test">Test</label><select id="result-test" name="test_id" required>{% for test in tests %}<option value="{{ test.id }}">{{ test.name }} · {{ test.course_title }} · {{ test.test_date }} (max {{ test.max_marks|round(1) }})</option>{% endfor %}</select></div>
+      <div class="full-width"><label for="result-student">Student</label><select id="result-student" name="student_id" required>{% for enrollment in enrollments %}<option value="{{ enrollment.student_id }}">{{ enrollment.full_name }} · {{ enrollment.student_code }} · course {{ enrollment.course_id }}</option>{% endfor %}</select></div>
+      <div><label for="result-marks">Marks obtained</label><input id="result-marks" type="number" name="marks" min="0" step="0.01" required></div>
+      <div><label for="result-feedback">Feedback (optional)</label><input id="result-feedback" name="feedback" maxlength="500"></div>
+      <div class="full-width"><button class="button button-primary" type="submit">Save result →</button></div>
+    </form>
+  </section>
+</div>
+<section class="card card-pad" style="margin-top:17px"><div class="card-title-row"><div><h2>Published test history</h2><p>Percentages are marks obtained divided by maximum marks.</p></div><span class="status-chip">{{ results|length }} recent results</span></div>
+  {% if results %}<div class="table-wrap"><table><thead><tr><th>Student</th><th>Test</th><th>Course</th><th>Marks</th><th>Percent</th><th>Feedback</th></tr></thead><tbody>{% for result in results %}<tr><td><strong>{{ result.full_name }}</strong><span class="table-subtext">{{ result.student_code }}</span></td><td>{{ result.test_name }}</td><td>{{ result.course_title }}</td><td>{{ result.marks|round(1) }} / {{ result.max_marks|round(1) }}</td><td><strong>{{ (result.marks * 100 / result.max_marks)|round(1) }}%</strong></td><td>{{ result.feedback or '—' }}</td></tr>{% endfor %}</tbody></table></div>{% else %}<div class="empty-inline"><strong>No results recorded</strong>Create a test and enter a student's score.</div>{% endif %}
+</section>
+<section class="card card-pad" style="margin-top:17px"><div class="card-title-row"><div><h2>Tests</h2><p>Results are entered per student above.</p></div></div>{% if tests %}<div class="table-wrap"><table><thead><tr><th>Test</th><th>Course</th><th>Date</th><th>Maximum</th><th>Passing threshold</th></tr></thead><tbody>{% for test in tests %}<tr><td><strong>{{ test.name }}</strong></td><td>{{ test.course_title }}</td><td>{{ test.test_date }}</td><td>{{ test.max_marks|round(1) }}</td><td>{{ test.passing_marks|round(1) if test.passing_marks is not none else 'Not set' }}</td></tr>{% endfor %}</tbody></table></div>{% else %}<div class="empty-inline"><strong>No tests created</strong>Create a test above.</div>{% endif %}</section>
+{% endblock %}

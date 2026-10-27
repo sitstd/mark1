@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Staff sign in' if admin else 'Student sign in' }}{% endblock %}
+{% block body_class %}auth-page{% endblock %}
+{% block content %}
+<header class="auth-header"><a class="brand" href="{{ url_for('home') }}"><span class="brand-mark">N</span><span class="brand-name">northstar<span> institute</span></span></a><a class="back-link" href="{{ url_for('home') }}">← Back to showcase</a></header>
+<main class="auth-main">
+  <div class="auth-art"><div class="auth-art-circle"></div><div class="auth-art-content"><div class="eyebrow eyebrow-light"><span class="eyebrow-dot"></span>YOUR NEXT CHAPTER</div><h1>Keep moving<br><em>forward.</em></h1><p>Your learning journey, all in one place.</p><div class="auth-art-bottom"><span>LEARN WITH PURPOSE</span><span>BUILD WITH CONFIDENCE</span></div></div></div>
+  <section class="auth-form-wrap">
+    <div class="auth-form-card">
+      <div class="auth-icon">{{ '⚙' if admin else '✳' }}</div>
+      <div class="eyebrow">{{ 'SECURE STAFF ACCESS' if admin else 'WELCOME BACK' }}</div>
+      <h2>{{ 'Staff sign in' if admin else 'Sign in to your account' }}</h2>
+      <p class="muted">{{ 'Manage courses, student progress, and projects.' if admin else 'Access your courses, progress, and project feedback.' }}</p>
+      <form method="post" class="stack-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <label for="identifier">{{ 'Username' if admin else 'Student ID, name, or username' }}</label>
+        <input id="identifier" name="identifier" value="{{ request.form.get('identifier', identifier_hint|default('')) }}" autocomplete="username" required autofocus>
+        <label for="password">Password</label>
+        <input id="password" type="password" name="password" autocomplete="current-password" required maxlength="1024">
+        <button class="button button-primary button-full" type="submit">Continue <span aria-hidden="true">→</span></button>
+      </form>
+      <p class="auth-privacy"><span aria-hidden="true">♧</span> Your academic records are protected and only visible to you and authorized institute staff.</p>
+      {% if not admin %}<p class="table-subtext">If more than one student shares your name, sign in with your Student ID instead.</p>{% endif %}
+      {% if admin %}<a class="auth-secondary" href="{{ url_for('login') }}">Student sign in →</a>{% else %}<a class="auth-secondary" href="{{ url_for('admin_login') }}">Staff sign in →</a>{% endif %}
+    </div>
+  </section>
+</main>
+{% endblock %}

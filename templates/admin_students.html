@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Student management{% endblock %}
+{% block content %}
+<div class="page-head"><div><div class="eyebrow"><span class="eyebrow-dot"></span>PEOPLE & ENROLLMENT</div><h1>Students</h1><p>Create student accounts, assign a unique ID, and manage access.</p></div><span class="status-chip">{{ students|length }} records</span></div>
+<div class="split-grid">
+  <section class="card card-pad"><div class="card-title-row"><div><h2>Add a student</h2><p>Student ID is also the initial sign-in name.</p></div></div>
+    <form method="post" class="form-grid">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <div><label for="full-name">Full name</label><input id="full-name" name="full_name" required minlength="2"></div>
+      <div><label for="student-code">Student ID</label><input id="student-code" name="student_code" required></div>
+      <div class="full-width"><label for="student-password">Initial password</label><input id="student-password" type="password" name="password" required minlength="10" maxlength="1024" autocomplete="new-password"><small class="table-subtext">Use a unique temporary password and share it privately with the student.</small></div>
+      <div><label for="student-email">Private email (optional)</label><input id="student-email" type="email" name="email"></div>
+      <div><label for="student-phone">Private phone (optional)</label><input id="student-phone" name="phone"></div>
+      <div class="full-width"><label for="course-id">Initial course enrollment (optional)</label><select id="course-id" name="course_id"><option value="">No course</option>{% for course in courses %}<option value="{{ course.id }}">{{ course.title }}</option>{% endfor %}</select></div>
+      <div class="full-width"><button class="button button-primary" type="submit">Create student account →</button></div>
+    </form>
+  </section>
+  <section class="card card-pad"><div class="card-title-row"><div><h2>Account & privacy</h2><p>Access is protected by server-side authorization.</p></div></div>
+    <div class="mini-progress"><div><span>Student access</span><strong>Private</strong></div><p class="muted" style="margin:0;font-size:10px">Academic details require a password sign-in. Student records do not appear in public search results.</p></div>
+    <p class="muted" style="margin-top:16px;font-size:10px;line-height:1.7">Archive accounts when a student leaves. Archiving blocks login and keeps historical course data intact for reports.</p>
+  </section>
+</div>
+<section class="card card-pad" style="margin-top:17px"><div class="card-title-row"><div><h2>Student directory</h2><p>Private contact details are available only to authorized administrators.</p></div></div>
+  <form method="get" class="gallery-controls" style="margin-top:0"><label class="gallery-search"><span aria-hidden="true">⌕</span><input name="q" value="{{ search }}" placeholder="Search by name or Student ID" aria-label="Search students"></label><button class="button button-dark button-small" type="submit">Search</button>{% if search %}<a class="button button-outline button-small" href="{{ url_for('admin_students') }}">Clear</a>{% endif %}</form>
+  {% if students %}<div class="table-wrap"><table><thead><tr><th>Student</th><th>Student ID</th><th>Email</th><th>Phone</th><th>Account</th><th>Action</th></tr></thead><tbody>
+  {% for student in students %}<tr><td><strong>{{ student.full_name }}</strong></td><td>{{ student.student_code }}</td><td>{{ student.email or '—' }}</td><td>{{ student.phone or '—' }}</td><td><span class="badge {{ 'badge-active' if student.active and not student.archived else 'badge-pending' }}">{{ 'Active' if student.active and not student.archived else 'Archived' }}</span></td><td>
+  {% if not student.archived %}<details><summary class="text-link">Edit / reset access</summary><form method="post" action="{{ url_for('update_student', student_id=student.id) }}" class="inline-form"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><div><label>Full name</label><input name="full_name" value="{{ student.full_name }}" required></div><div><label>Student ID</label><input name="student_code" value="{{ student.student_code }}" required></div><div><label>Private email</label><input type="email" name="email" value="{{ student.email or '' }}"></div><div><label>Private phone</label><input name="phone" value="{{ student.phone or '' }}"></div><div class="span-all"><label>New password (optional)</label><input type="password" name="password" minlength="10" maxlength="1024" autocomplete="new-password"></div><div class="span-all"><button class="button button-outline" type="submit">Save student profile</button></div></form></details><form method="post" action="{{ url_for('archive_student', student_id=student.id) }}" style="margin-top:8px"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="button button-outline button-small" type="submit">Archive</button></form>{% endif %}
+  </td></tr>{% endfor %}
+  </tbody></table></div>{% else %}<div class="empty-inline"><strong>No student records</strong>Create the first student account above.</div>{% endif %}
+</section>
+{% endblock %}
